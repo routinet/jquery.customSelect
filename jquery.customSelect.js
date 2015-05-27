@@ -5,7 +5,7 @@
  *
  * Copyright 2013 Adam Coulombe
  * @license http://www.opensource.org/licenses/mit-license.html MIT License
- * @license http://www.gnu.org/licenses/gpl.html GPL2 License 
+ * @license http://www.gnu.org/licenses/gpl.html GPL2 License
  */
 
 (function ($) {
@@ -18,42 +18,52 @@
                 return this;
             }
             var defaults = {
-                    customClass: 'customSelect',
-                    mapClass:    true,
-                    mapStyle:    true
+                    customClass:  'customSelect',
+                    customCSS :   { control:{}, selectSpan:{}, selectInnerSpan:{} },
+                    mapId:        true,
+                    idPrefix:     'CS',
+                    mapClass:     true,
+                    mapStyle:     true,
+                    arrowHint:    true,
             },
             options = $.extend(defaults, options),
-            prefix = options.customClass,
+            getId = function(old_id){
+              return options.idPrefix + '-' + old_id;
+            },
+            getClass = function(suffix){
+                return options.customClass + suffix;
+            },
             changed = function ($select,customSelectSpan) {
                 var currentSelected = $select.find(':selected'),
-                customSelectSpanInner = customSelectSpan.children(':first'),
+                customSelectSpanInner = customSelectSpan.children('.'+getClass('Inner')),
                 html = currentSelected.html() || '&nbsp;';
 
                 customSelectSpanInner.html(html);
-                
+
                 if (currentSelected.attr('disabled')) {
                     customSelectSpan.addClass(getClass('DisabledOption'));
                 } else {
                     customSelectSpan.removeClass(getClass('DisabledOption'));
                 }
-                
+
                 setTimeout(function () {
                     customSelectSpan.removeClass(getClass('Open'));
-                    $(document).off('mouseup.customSelect');                  
+                    $(document).off('mouseup.customSelect');
                 }, 60);
-            },
-            getClass = function(suffix){
-                return prefix + suffix;
             };
 
             return this.each(function () {
                 var $select = $(this),
                     customSelectInnerSpan = $('<span />').addClass(getClass('Inner')),
-                    customSelectSpan = $('<span />');
+                    customSelectSpan = $('<span />'),
+                    customArrowSpan = $('<span />').addClass(getClass('Arrow'));
 
+                if (options.arrowHint) {
+                    customSelectSpan.append(customArrowSpan);
+                }
                 $select.after(customSelectSpan.append(customSelectInnerSpan));
-                
-                customSelectSpan.addClass(prefix);
+
+                customSelectSpan.addClass(options.customClass);
 
                 if (options.mapClass) {
                     customSelectSpan.addClass($select.attr('class'));
@@ -61,21 +71,29 @@
                 if (options.mapStyle) {
                     customSelectSpan.attr('style', $select.attr('style'));
                 }
+                if (options.mapId) {
+                    customSelectSpan.attr('id', getId($select.attr('id')));
+                }
 
                 $select
                     .addClass('hasCustomSelect')
                     .on('render.customSelect', function () {
                         changed($select,customSelectSpan);
-                        $select.css('width','');			
+                        $select.css('width','');
                         var selectBoxWidth = parseInt($select.outerWidth(), 10) -
                                 (parseInt(customSelectSpan.outerWidth(), 10) -
                                     parseInt(customSelectSpan.width(), 10));
-                        
+
                         // Set to inline-block before calculating outerHeight
-                        customSelectSpan.css({
-                            display: 'inline-block'
-                        });
-                        
+                        customSelectSpan.css(
+                            $.extend(
+                                {
+                                    display: 'inline-block'
+                                },
+                                options.customCSS.selectSpan
+                            )
+                        );
+
                         var selectBoxHeight = customSelectSpan.outerHeight();
 
                         if ($select.attr('disabled')) {
@@ -84,19 +102,38 @@
                             customSelectSpan.removeClass(getClass('Disabled'));
                         }
 
-                        customSelectInnerSpan.css({
-                            width:   selectBoxWidth,
-                            display: 'inline-block'
-                        });
+                        customSelectInnerSpan.css(
+                            $.extend(
+                                {
+                                    width:   selectBoxWidth,
+                                    display: 'inline-block'
+                                },
+                                options.customCSS.selectInnerSpan
+                            )
+                        );
 
-                        $select.css({
-                            '-webkit-appearance': 'menulist-button',
-                            width:                customSelectSpan.outerWidth(),
-                            position:             'absolute',
-                            opacity:              0,
-                            height:               selectBoxHeight,
-                            fontSize:             customSelectSpan.css('font-size')
-                        });
+                        customArrowSpan.css(
+                            $.extend(
+                                {
+                                    display: 'inline-block'
+                                },
+                                options.customCSS.selectArrow
+                            )
+                        );
+
+                        $select.css(
+                            $.extend(
+                                {
+                                    '-webkit-appearance': 'menulist-button',
+                                    width:                customSelectSpan.outerWidth(),
+                                    position:             'absolute',
+                                    opacity:              0,
+                                    height:               selectBoxHeight,
+                                    fontSize:             customSelectSpan.css('font-size')
+                                },
+                                options.customCSS.control
+                            )
+                        );
                     })
                     .on('change.customSelect', function () {
                         customSelectSpan.addClass(getClass('Changed'));
@@ -116,7 +153,7 @@
                         customSelectSpan.removeClass(getClass('Changed'));
                     })
                     .on('mouseup.customSelect', function (e) {
-                        
+
                         if( !customSelectSpan.hasClass(getClass('Open'))){
                             // if FF and there are other selects open, just apply focus
                             if($('.'+getClass('Open')).not(customSelectSpan).length>0 && typeof InstallTrigger !== 'undefined'){
