@@ -25,6 +25,7 @@
                     mapClass:     true,
                     mapStyle:     true,
                     arrowHint:    true,
+                    arrowClass:   'customSelectArrow',
             },
             options = $.extend(defaults, options),
             getId = function(old_id){
@@ -56,7 +57,7 @@
                 var $select = $(this),
                     customSelectInnerSpan = $('<span />').addClass(getClass('Inner')),
                     customSelectSpan = $('<span />'),
-                    customArrowSpan = $('<span />').addClass(getClass('Arrow'));
+                    customArrowSpan = $('<span />').addClass(options.arrowClass);
 
                 if (options.arrowHint) {
                     customSelectSpan.append(customArrowSpan);
